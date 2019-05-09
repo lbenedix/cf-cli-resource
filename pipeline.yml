@@ -29,6 +29,7 @@ test-params: &test-params
 test-jobs: &test-jobs
 - run-app-push-tests
 - run-app-tests
+- run-app-zero-downtime-push-tests
 - run-asynchronous-service-tests
 - run-auth-client-credentials-tests
 - run-auth-origin-tests
@@ -100,6 +101,25 @@ jobs:
     params:
       <<: *test-params
       TEST_SCRIPT: run-app-tests
+
+- name: run-app-zero-downtime-push-tests
+  public: true
+  plan:
+  - aggregate:
+    - get: project
+      resource: cf-cli-resource
+      passed: [build]
+    - get: cf-cli-resource-image-rc
+      trigger: true
+      passed: [build]
+    - get: version
+      passed: [build]
+  - task: test
+    file: project/ci/task.yml
+    image: cf-cli-resource-image-rc
+    params:
+      <<: *test-params
+      TEST_SCRIPT: run-app-zero-downtime-push-tests
 
 - name: run-asynchronous-service-tests
   public: true
@@ -459,6 +479,7 @@ jobs:
 resources:
 - name: cf-cli-resource
   type: git
+  icon: github-circle
   source:
     uri: {{git-uri}}
     branch: {{git-branch}}
@@ -471,6 +492,7 @@ resources:
 
 - name: version
   type: semver
+  icon: tag
   source:
     driver: git
     initial_version: 1.0.0-rc.0
@@ -480,14 +502,16 @@ resources:
     private_key: ((git_key.private_key))
 
 - name: cf-cli-resource-image-rc
-  type: registry-image
+  type: docker-image
+  icon: docker
   source:
     repository: {{docker-repository-rc}}
     username: ((docker.username))
     password: ((docker.password))
 
 - name: cf-cli-resource-image-final
-  type: registry-image
+  type: docker-image
+  icon: docker
   source:
     repository: {{docker-repository-final}}
     username: ((docker.username))
@@ -495,12 +519,14 @@ resources:
 
 - name: pipeline-tasks
   type: git
+  icon: github-circle
   source:
     uri: {{pipeline-tasks-git-uri}}
     branch: {{pipeline-tasks-git-branch}}
 
 - name: github-release
   type: github-release
+  icon: package-variant-closed
   source:
     owner: {{github-release-user}}
     repository: cf-cli-resource
@@ -508,12 +534,14 @@ resources:
 
 - name: service-broker
   type: file-url
+  icon: file
   source:
     url: https://github.com/mattmcneeney/overview-broker/archive/dddec578676b8dcbe06158e3ac0b34edc6f5de6e.zip
     filename: overview-broker.zip
 
 - name: logging-route-service
   type: file-url
+  icon: file
   source:
     url: https://github.com/nulldriver/logging-route-service/archive/e6c61e141bc0fc0b0a482d207a2f53dfbe5b4aa1.zip
     filename: logging-route-service.zip

@@ -2,14 +2,6 @@
 set -eu
 set -o pipefail
 
-function cf_is_logged_in() {
-    if ! $(cf target &> /dev/null); then
-      return 1
-    fi
-    return  0
-}
-
-
 function cf_api() {
   local url=${1:?url null or not set}
   local skip_ssl_validation=${2:-false}
@@ -669,17 +661,6 @@ function cf_is_app_bound_to_route_service() {
     jq -e --arg service_instance "$service_instance" 'select (.resources[].entity.service_instance.entity.name == $service_instance) | true' >/dev/null
 }
 
-function cf_zero_downtime_push() {
-  local args=${1:?args null or not set}
-  local current_app_name=${2:-}
-  if [ -n "$current_app_name" ]; then
-    # autopilot (tested v0.0.2 - v0.0.6) doesn't like CF_TRACE=true
-    CF_TRACE=false cf zero-downtime-push "$current_app_name" $args
-  else
-    cf push $args
-  fi
-}
-
 function cf_set_env() {
   local app_name=${1:?app_name null or not set}
   local env_var_name=${2:?env_var_name null or not set}
@@ -770,8 +751,8 @@ function cf_rename() {
 function cf_add_network_policy() {
   local source_app=${1:?source_app null or not set}
   local destination_app=${2:?destination_app null or not set}
-  local protocol=${3:?protocol null or not set}
-  local port=${4:?port null or not set}
+  local protocol=$3
+  local port=$4
 
   local args=("$source_app" --destination-app "$destination_app")
   [ -n "$protocol" ] && args+=(--protocol "$protocol")
