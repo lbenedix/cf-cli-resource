@@ -86,6 +86,9 @@ if echo $params | jq -e 'has("command")' >/dev/null; then
   params=$(jq -n --argjson params "$params" '{commands: [ $params ] }')
 fi
 
+params_org=$(cat $payload | jq -r '.params.org // empty')
+params_space=$(cat $payload | jq -r '.params.space // empty')
+
 echo "$params" | jq -c '.commands[]' | while read -r options; do
 
   command=$(echo $options | jq -r '.command')
@@ -99,8 +102,8 @@ echo "$params" | jq -c '.commands[]' | while read -r options; do
   cf_color=$(echo $options | jq -r '.cf_color //empty') && [ -n "$cf_color" ] && export CF_COLOR=$cf_color
   cf_dial_timeout=$(echo $options | jq -r '.cf_dial_timeout //empty') && [ -n "$cf_dial_timeout" ] && export CF_DIAL_TIMEOUT=$cf_dial_timeout
   cf_trace=$(echo $options | jq -r '.cf_trace //empty') && [ -n "$cf_trace" ] && export CF_TRACE=$cf_trace
-  org=$(echo $options | jq -r '.org //empty') && [ -z "$org" ] && org=$source_org
-  space=$(echo $options | jq -r '.space //empty') && [ -z "$space" ] && space=$source_space
+  org=$(echo $options | jq -r '.org //empty') && [ -z "$org" ] && org=$params_org && [ -z "$org" ] && org=$source_org
+  space=$(echo $options | jq -r '.space //empty') && [ -z "$space" ] && space=$params_space && [ -z "$space" ] && space=$source_space
 
   if ! $cf_logged_in; then
     cf_api "$api" "$skip_cert_check"
